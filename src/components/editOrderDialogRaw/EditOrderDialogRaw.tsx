@@ -1,61 +1,64 @@
-import React from 'react';
-import Dialog from '@material-ui/core/Dialog';
-import DialogActions from '@material-ui/core/DialogActions';
-import DialogContent from '@material-ui/core/DialogContent';
-import DialogTitle from '@material-ui/core/DialogTitle';
-import Button from '@material-ui/core/Button';
-import TextField from '@material-ui/core/TextField';
-import { orderList } from '../../mocks/constData';
+import React from 'react'
+import Dialog from '@material-ui/core/Dialog'
+import DialogActions from '@material-ui/core/DialogActions'
+import DialogContent from '@material-ui/core/DialogContent'
+import DialogTitle from '@material-ui/core/DialogTitle'
+import Button from '@material-ui/core/Button'
+import TextField from '@material-ui/core/TextField'
+import { Patient } from '../../models/Patient'
+import axios from 'axios'
 
 export interface EditOrderDialogRawProps {
-    classes: Record<'paper', string>;
-    id: string;
-    keepMounted: boolean;
-    orderMsg: string;
-    orderId: number;
-    open: boolean;
-    onClose: (value?: string) => void;
+    classes: Record<'paper', string>
+    id: string
+    keepMounted: boolean
+    open: boolean
+    patient: Patient
+    onClose: (value?: string) => void
   }
   
 export function EditOrderDialogRaw(props: EditOrderDialogRawProps) {
-    const { onClose, orderMsg: orderMsgProp, orderId: orderIdProp, open, ...other } = props;
-    const [ orderMsg, setOrderMsg ] = React.useState<string>(orderMsgProp);
-    const [ orderId, setOrderId ] = React.useState<number>(orderIdProp);
+    const { onClose, open, patient: patientProp, ...other } = props
+    const [ orderMsg, setOrderMsg ] = React.useState<string | undefined>(patientProp.OrderId?.message)
+    const [ patient, setPatient ] = React.useState<Patient>(patientProp)
   
+    // handle enter dialog to get parent props
     const handleEntering = () => {
-      console.log('handleEntering orderMsgProp', orderMsgProp);
-      console.log('handleEntering orderIdProp', orderIdProp);
-      
-      if (orderMsgProp) {
-        setOrderMsg(orderMsgProp);
+      // console.log('handleEntering patientProp', patientProp)
+      // console.log('handleEntering patientProp?.OrderId.Message', patientProp.OrderId?.message)
+      if (patientProp?.OrderId?.message) {
+        setOrderMsg(patientProp.OrderId.message)
       } else {
-        setOrderMsg('');
+        setOrderMsg('')
       }
-      setOrderId(orderIdProp);
-      console.log('handleEntering orderId', orderId);
-      
+      setPatient(patientProp)
+      // console.log('handleEntering patient', patient)
     };
   
+    // handle cancel event
     const handleCancel = () => {
-      onClose('sub com handleCancel');
+      onClose('sub com handleCancel')
     };
   
+    // handle ok event
     const handleOk = () => {
-      console.log('handleOk orderMsg', orderMsg);
-      const getOrderIndex = orderList.findIndex((order) => {
-        return order.Id === orderIdProp
-      })
-      console.log('handleOk getOrderIndex', getOrderIndex);
-      
-      orderList[getOrderIndex].Message = orderMsg
-      console.log('handleOk orderList', orderList);
-      
-      onClose('sub com handleOk');
-  
+      // console.log('handleOk orderMsg', orderMsg)
+      // console.log('handleOk patientProp A', patientProp)
+      patientProp.OrderId = { message: orderMsg || '',  orderId: patientProp.OrderId?.orderId }
+      // console.log('handleOk patientProp B', patientProp)
+
+      void axios({
+        method: 'post',
+        url: `http://localhost:3000/editOrder/${patientProp?.patientId}`,
+        data: { Patient: patientProp }
+      });
+
+      onClose('sub com handleOk')
     };
   
+    // handle on change event
     const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-      setOrderMsg((event.target as HTMLInputElement).value);
+      setOrderMsg((event.target as HTMLInputElement).value)
     };
   
     return (
@@ -78,7 +81,7 @@ export function EditOrderDialogRaw(props: EditOrderDialogRawProps) {
               type="text"
               fullWidth
               onChange={handleChange}
-              value={orderMsg}
+              value={orderMsg || ''}
           />
         </DialogContent>
         <DialogActions>
